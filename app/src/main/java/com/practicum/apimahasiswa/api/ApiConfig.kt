@@ -8,7 +8,7 @@ object ApiConfig {
     val apiService: ApiService
         get() {
             val retrofit = Retrofit.Builder()
-                .baseUrl("http://192.168.0.112:8000/")
+                .baseUrl("http://192.168.1.20:8080/")
                 .addConverterFactory(GsonConverterFactory.create())
                 .build()
             return retrofit.create(ApiService::class.java)

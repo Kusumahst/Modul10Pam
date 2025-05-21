@@ -22,4 +22,8 @@ interface ApiService {
         @Field("email") email: String?,
         @Field("jurusan") jurusan: String?
     ): Call<AddMahasiswaResponse?>?
+
+    @GET("mahasiswa")
+    fun getAllMahasiswa(): Call<MahasiswaResponse>
+
 }
