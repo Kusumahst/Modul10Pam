@@ -1,5 +1,6 @@
 package com.practicum.apimahasiswa
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -9,6 +10,7 @@ import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.practicum.apimahasiswa.api.ApiConfig.apiService
+import com.practicum.apimahasiswa.model.AddMahasiswaResponse
 import com.practicum.apimahasiswa.model.Mahasiswa
 import com.practicum.apimahasiswa.model.MahasiswaResponse
 import retrofit2.Call
@@ -49,7 +51,21 @@ class SearchMahasiswaActivity : AppCompatActivity() {
         rvMahasiswa = findViewById(R.id.rvMahasiswa)
 
         // Setup RecyclerView
-        mahasiswaAdapter = MahasiswaAdapter(mahasiswaList)
+        mahasiswaAdapter = MahasiswaAdapter(
+            mahasiswaList,
+            onEditClick = { mahasiswa ->
+                val intent = Intent(this, UpdateMahasiswaActivity::class.java)
+                intent.putExtra("mahasiswa_id", mahasiswa.id)
+                intent.putExtra("nrp", mahasiswa.nrp)
+                intent.putExtra("nama", mahasiswa.nama)
+                intent.putExtra("email", mahasiswa.email)
+                intent.putExtra("jurusan", mahasiswa.jurusan)
+                startActivity(intent)
+            },
+            onDeleteClick = { mahasiswa ->
+                deleteMahasiswa(mahasiswa.id!!)
+            }
+        )
         rvMahasiswa.layoutManager = LinearLayoutManager(this)
         rvMahasiswa.adapter = mahasiswaAdapter
 
@@ -64,6 +80,11 @@ class SearchMahasiswaActivity : AppCompatActivity() {
             }
             searchMahasiswa(nrp)
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        loadAllMahasiswa()
     }
 
     private fun searchMahasiswa(nrp: String) {
@@ -101,7 +122,20 @@ class SearchMahasiswaActivity : AppCompatActivity() {
                 showLoading(false)
                 if (response.isSuccessful && response.body() != null) {
                     mahasiswaList = response.body()!!.data ?: ArrayList()
-                    mahasiswaAdapter = MahasiswaAdapter(mahasiswaList)
+                    mahasiswaAdapter = MahasiswaAdapter(mahasiswaList,
+                        onEditClick = { mahasiswa ->
+                            val intent = Intent(this@SearchMahasiswaActivity, UpdateMahasiswaActivity::class.java)
+                            intent.putExtra("mahasiswa_id", mahasiswa.id)
+                            intent.putExtra("nrp", mahasiswa.nrp)
+                            intent.putExtra("nama", mahasiswa.nama)
+                            intent.putExtra("email", mahasiswa.email)
+                            intent.putExtra("jurusan", mahasiswa.jurusan)
+                            startActivity(intent)
+                        },
+                        onDeleteClick = { mahasiswa ->
+                            deleteMahasiswa(mahasiswa.id!!)
+                        }
+                    )
                     rvMahasiswa.adapter = mahasiswaAdapter
                 } else {
                     Toast.makeText(this@SearchMahasiswaActivity, "Gagal memuat data mahasiswa", Toast.LENGTH_SHORT).show()
@@ -109,6 +143,26 @@ class SearchMahasiswaActivity : AppCompatActivity() {
             }
 
             override fun onFailure(call: Call<MahasiswaResponse?>, t: Throwable) {
+                showLoading(false)
+                Toast.makeText(this@SearchMahasiswaActivity, "Error: ${t.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }
+
+    private fun deleteMahasiswa(id: String) {
+        showLoading(true)
+        apiService.deleteMahasiswa(id).enqueue(object : Callback<AddMahasiswaResponse> {
+            override fun onResponse(call: Call<AddMahasiswaResponse>, response: Response<AddMahasiswaResponse>) {
+                showLoading(false)
+                if (response.isSuccessful) {
+                    Toast.makeText(this@SearchMahasiswaActivity, "Data berhasil dihapus", Toast.LENGTH_SHORT).show()
+                    loadAllMahasiswa()
+                } else {
+                    Toast.makeText(this@SearchMahasiswaActivity, "Gagal menghapus data", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onFailure(call: Call<AddMahasiswaResponse>, t: Throwable) {
                 showLoading(false)
                 Toast.makeText(this@SearchMahasiswaActivity, "Error: ${t.message}", Toast.LENGTH_SHORT).show()
             }
